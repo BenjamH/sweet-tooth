@@ -8,10 +8,12 @@ var Main = React.createClass({
       showCone:true
     }
   },
-  componentDidMount(){
-    console.log('initial state:', this.state)
-
+  componentWillMount: function(){
     this.getLocation();
+  },
+  componentDidMount: function(){
+    this.setState({showCone:true});
+    console.log('initial state:', this.state)
   },
   sendStateData: function(){
     var formData = {
@@ -85,12 +87,12 @@ var Main = React.createClass({
   },
   showMap: function(){
 
-    function initMap(longitude,latitude,dataArray) {
+    function initMap(longitude,latitude, dataArray) {
       var latitude = parseFloat(latitude)
       var longitude = parseFloat(longitude)
       var mapCenter = new google.maps.LatLng({lat: latitude, lng: longitude})
       var mapOptions = {
-        zoom: 16,
+        zoom: 15,
         center: mapCenter,
         scrollwheel: false,
         draggable: true
@@ -103,32 +105,46 @@ var Main = React.createClass({
         map: map
       });
 
+      google.maps.event.addListener(map, 'idle', function() {
+        console.log('hey')
+        window.setTimeout(addMarkers(dataArray), 10000 );
+      });
+
+    };
+
+
+    function addMarkers(dataArray){
       var IceCreamCoords = [];
       var iceCreamMarkers = [];
 
       for (var i = 0; i < dataArray.length; i++) {
-        var coords= {lat: dataArray[i]['latitude'], lng: dataArray[i]['longitude']};
-        var contentString = '<div id="content">'+
-        '<div id="siteNotice">'+
-        '</div>'+
-        '<h4 id="firstHeading" class="firstHeading">' + dataArray[i]['name'] + '</h4>'+
-        '<img class="image-store" src="' + dataArray[i]['image'] + '"/>'+
-        '<div id="bodyContent">'+
-        '<p><b>Rating:</b> ' + dataArray[i]['rating'] + '</p>'+
-        '<p><b>Phone:</b> ' + dataArray[i]['phone'] + '</p>'+
-        '<p><b>Address:</b> ' + dataArray[i]['address'] + '<br>San Francisco, CA</p>'+
-        '<p style="font-size=10px"><i>' + dataArray[i]['text'] + '</i></p>'+
-        '</div>'+
-        '</div>';
-        iceCreamMarkers[i] = createMarker({
-          position:new google.maps.LatLng(coords),
-          map: map,
-          title: 'ice cream',
-          icon: "http://31.media.tumblr.com/tumblr_ls9k18YAcI1qg66hv.gif",
-          optimized: false
-        }, contentString);
-        iceCreamMarkers[i].setAnimation(google.maps.Animation.BOUNCE)
-        iceCreamMarkers[i].addListener('click', toggleBounce);
+        console.log('outside ', i);
+        (function(i){
+        window.setTimeout(function() {
+          console.log('inside', i)
+          var coords= {lat: dataArray[i]['latitude'], lng: dataArray[i]['longitude']};
+          var contentString = '<div id="content">'+
+          '<div id="siteNotice">'+
+          '</div>'+
+          '<h4 id="firstHeading" class="firstHeading">' + dataArray[i]['name'] + '</h4>'+
+          '<img class="image-store" src="' + dataArray[i]['image'] + '"/>'+
+          '<div id="bodyContent">'+
+          '<p><b>Rating:</b> ' + dataArray[i]['rating'] + '</p>'+
+          '<p><b>Phone:</b> ' + dataArray[i]['phone'] + '</p>'+
+          '<p><b>Address:</b> ' + dataArray[i]['address'] + '<br>San Francisco, CA</p>'+
+          '<p style="font-size=10px"><i>' + dataArray[i]['text'] + '</i></p>'+
+          '</div>'+
+          '</div>';
+          iceCreamMarkers.push(createMarker({
+            position:new google.maps.LatLng(coords),
+            map: map,
+            title: 'ice cream',
+            icon: "http://31.media.tumblr.com/tumblr_ls9k18YAcI1qg66hv.gif",
+            optimized: false,
+            animation: google.maps.Animation.DROP
+          }, contentString))
+        }, i * 400 )})(i)
+        // iceCreamMarkers[i].addListener('click', toggleBounce);
         // iceCreamMarkers[i].addListener('mouseover', openInfoWindow);
         // iceCreamMarkers[i].addListener('mouseout', closeInfoWindow);
       };
@@ -149,6 +165,16 @@ var Main = React.createClass({
         });
       }
       return marker;
+    }
+
+    function addMarkerWithTimeout(position, timeout) {
+      window.setTimeout(function() {
+        markers.push(new google.maps.Marker({
+          position: position,
+          map: map,
+          animation: google.maps.Animation.DROP
+        }));
+      }, timeout);
     }
 
     function openInfoWindow() {
